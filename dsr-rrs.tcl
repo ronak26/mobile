@@ -60,7 +60,7 @@ proc finish {} {
 #    close $f1
 #close $f2
 #    close $f3
-exec nam -r 5m 1_out.nam       
+exec nam -r 5m confout.nam       
     # exec xgraph proj_out0.tr proj_out1.tr 
     # proj_out2.tr proj_out3.tr 
     # &
@@ -97,11 +97,63 @@ for {set i 0} {$i < $val(nn)} {incr i} {
 for {set i 0} {$i < $val(nn) } {incr i} {
     $ns_ at $val(stop).0 "$node_($i) reset";
 }
-$ns_ at $val(stop).0002 "puts \"NS EXITING...\" ; $ns_ halt"
+
+
+set sink0 [new Agent/LossMonitor]
+set sink1 [new Agent/LossMonitor]
+set sink2 [new Agent/LossMonitor]
+set sink3 [new Agent/LossMonitor]
+set sink4 [new Agent/LossMonitor]
+set sink5 [new Agent/LossMonitor]
+$ns_ attach-agent $node_(0) $sink0
+$ns_ attach-agent $node_(1) $sink1
+$ns_ attach-agent $node_(2) $sink2
+$ns_ attach-agent $node_(3) $sink3
+$ns_ attach-agent $node_(4) $sink4
+$ns_ attach-agent $node_(5) $sink5
+
+#$ns attach-agent $sink2 $sink3
+set tcp0 [new Agent/TCP]
+$ns_ attach-agent $node_(0) $tcp0
+set tcp1 [new Agent/TCP]
+$ns_ attach-agent $node_(1) $tcp1
+set tcp2 [new Agent/TCP]
+$ns_ attach-agent $node_(2) $tcp2
+set tcp3 [new Agent/TCP]
+$ns_ attach-agent $node_(3) $tcp3
+set tcp4 [new Agent/TCP]
+$ns_ attach-agent $node_(4) $tcp4
+set tcp5 [new Agent/TCP]
+$ns_ attach-agent $node_(5) $tcp5
+
+
+proc attach-CBR-traffic { node sink size interval } {
+   #Get an instance of the simulator
+   set ns_ [Simulator instance]
+   #Create a CBR  agent and attach it to the node
+   set cbr [new Agent/CBR]
+   $ns_ attach-agent $node $cbr
+   $cbr set packetSize_ $size
+   $cbr set interval_ $interval
+
+   #Attach CBR source to sink;
+   $ns_ connect $cbr $sink
+   return $cbr
+  }
+
+set cbr0 [attach-CBR-traffic $node_(0) $sink5 1000 .015]
+
+
+
+#$ns_ at $val(stop).0002 "puts \"NS EXITING...\" ; $ns_ halt"
 puts $tracefd "Confidant Wrote this!"
 puts $tracefd "M 0.0 nn $val(nn) x $val(x) y $val(y) rp $val(rp)"
 #puts $tracefd "M 0.0 sc $val(sc) cp $val(cp) seed $val(seed)"
 puts $tracefd "M 0.0 prop $val(prop) ant $val(ant)"
+
+
+
+$ns_ at 1.0 "$cbr0 start"
 $ns_ at 10.0 "finish"
 puts "Starting Simulation..."
 $ns_ run
